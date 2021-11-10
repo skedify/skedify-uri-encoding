@@ -1,0 +1,25 @@
+name: Release Branch Tagger
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "release/**"
+
+jobs:
+  release-branch-tagger:
+    name: Tag & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # Action needs all info about tags so pass fetch-depth: 0
+          fetch-depth: 0
+
+      - name: Tag & Release
+        uses: skedify/github-workflows/release-branch-tagger@develop
+        env:
+          GITHUB_TOKEN: ${{ secrets.SKEDIBOT_PAT }}
+        with:
+          applications: '[{"name":"skedify-uri-encoding"}]'
+          is-stable-release: ${{ github.event_name == 'workflow_dispatch' }}

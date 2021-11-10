@@ -1,0 +1,22 @@
+diff --git a/node_modules/@changesets/git/dist/git.cjs.dev.js b/node_modules/@changesets/git/dist/git.cjs.dev.js
+index 0564b7e..10cb3bc 100644
+--- a/node_modules/@changesets/git/dist/git.cjs.dev.js
++++ b/node_modules/@changesets/git/dist/git.cjs.dev.js
+@@ -222,8 +222,17 @@ async function getChangedPackagesSinceRef({
+   .filter((pkg, idx, packages) => packages.indexOf(pkg) === idx);
+ }
+ 
++async function tagExists(tagStr) {
++   const gitCmd = await spawn__default['default']("git", ["tag", "-l", tagStr]);
++   const output = gitCmd.stdout.toString().trim();
++   const tagExists = !!output;
++   return tagExists;
++ }
++
+ exports.add = add;
+ exports.commit = commit;
++exports.tagExists = tagExists;
++exports.getChangedChangesetFilesSinceRef = getChangedChangesetFilesSinceRef;
+ exports.getChangedChangesetFilesSinceRef = getChangedChangesetFilesSinceRef;
+ exports.getChangedFilesSince = getChangedFilesSince;
+ exports.getChangedPackagesSinceRef = getChangedPackagesSinceRef;

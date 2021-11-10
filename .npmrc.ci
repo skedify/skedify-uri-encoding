@@ -1,0 +1,2 @@
+@skedify:registry=https://team.skedify.io/npm
+//team.skedify.io/:_authToken="${PRIVATE_NPM_TOKEN}"

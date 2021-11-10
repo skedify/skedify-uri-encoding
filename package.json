@@ -1,6 +1,6 @@
 {
   "name": "skedify-uri-encoding",
-  "version": "0.0.0-development.0",
+  "version": "2.1.1",
   "description": "Encoding of JSON object",
   "license": "MIT",
   "main": "dist/index.js",
@@ -13,7 +13,6 @@
   "engines": {
     "node": "16"
   },
-  "peerDependencies": {},
   "scripts": {
     "start": "tsdx watch",
     "build": "tsdx build --format cjs,esm,umd --name SkedifyUriEncoding",
@@ -25,9 +24,9 @@
     "format": "npm run lint -- --fix",
     "prepare": "husky install && npm run build",
     "check-coverage": "npm run test -- --ci --coverage",
-    "commit": "git-cz",
-    "commit:lint": "commitlint --edit \"$1\"",
-    "semantic-release": "semantic-release"
+    "changeset": "changeset",
+    "release": "npm run build && changeset publish",
+    "postinstall": "patch-package"
   },
   "prettier": {
     "printWidth": 80,
@@ -53,6 +52,8 @@
     "json-stable-stringify": "^1.0.1"
   },
   "devDependencies": {
+    "@changesets/cli": "2.16.0",
+    "@changesets/git": "1.1.1",
     "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^12.1.4",
     "@rollup/plugin-replace": "^2.4.2",
@@ -60,6 +61,7 @@
     "cross-env": "^7.0.3",
     "cz-conventional-changelog": "^3.3.0",
     "husky": "^6.0.0",
+    "patch-package": "6.4.7",
     "semantic-release": "^17.4.3",
     "tsdx": "^0.14.1",
     "tslib": "^2.2.0",
@@ -69,5 +71,6 @@
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
-  }
+  },
+  "private": true
 }

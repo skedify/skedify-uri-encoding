@@ -1,0 +1,121 @@
+name: Install, Test & Release
+
+env:
+  NPM_CONFIG_USERCONFIG: .npmrc.ci
+  PRIVATE_NPM_TOKEN: ${{ secrets.PRIVATE_NPM_TOKEN }}
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  install:
+    name: Install
+    runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'pull_request' && contains(github.head_ref, 'changeset-release')) }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - uses: actions/cache@v2
+        id: cache-install
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/cache@v2
+        id: restore-install
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+      - run: npm run lint
+
+  testUnit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/cache@v2
+        id: restore-install
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+
+      - run: npm run test -- --ci --coverage --maxWorkers=2
+
+  test:
+    name: Test functionality on Node ${{ matrix.node }}
+    needs: install
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['9', '10', '12', '14', '16']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Run client tests
+        run: npm run test:client
+
+  testsPass:
+    name: Thank you, next
+    runs-on: ubuntu-latest
+    needs: [lint,testUnit, test]
+    steps:
+      - run: exit 0
+
+  release:
+    name: Release
+    # Enable regular release flow for develop & branches starting with "rc/"
+    if: ${{ github.ref == 'refs/heads/develop' }}
+    runs-on: ubuntu-latest
+    needs: [testUnit,test]
+    steps:
+      - uses: actions/cache@v2
+        id: restore-install
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+
+      - name: Setup .npmrc
+        run: |
+          cp .npmrc.ci .npmrc
+
+      - name: Create Release Pull Request or Publish to NPM
+        id: changesets
+        uses: changesets/action@master
+        with:
+          publish: npm run release
+        env:
+          # Note that we're not using the GH token provided by Actions here because Actions has a rule that Actions
+          # will not run as the result of another Action so CI wouldn't run on the release PRs then
+          # we can get around it by using a personal access token from a GH account
+          GITHUB_TOKEN: ${{ secrets.SKEDIBOT_PAT }}

@@ -1,134 +1,134 @@
-name: CI
-on: [push]
-jobs:
-  build:
-    name: Create and verify a new build
+# name: CI
+# on: [push]
+# jobs:
+#   build:
+#     name: Create and verify a new build
 
-    runs-on: ubuntu-latest
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v2
 
-      - name: Setup node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+#       - name: Setup node.js
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: '16'
 
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+#       - name: Install deps and build (with cache)
+#         uses: bahmutov/npm-install@v1
 
-      - name: Lint
-        run: npm run lint
+#       - name: Lint
+#         run: npm run lint
 
-      - name: Test
-        run: npm test -- --ci --coverage --maxWorkers=2
+#       - name: Test
+#         run: npm test -- --ci --coverage --maxWorkers=2
 
-      - name: Build
-        run: npm run build
+#       - name: Build
+#         run: npm run build
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: artifact-${{ github.run_id }}
-          path: dist
-      
-      - name: Drop development dependencies
-        run: npm prune --production
+#       - uses: actions/upload-artifact@v2
+#         with:
+#           name: artifact-${{ github.run_id }}
+#           path: dist
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: node-modules-${{ github.run_id }}
-          path: node_modules
-  test:
-    name: Test functionality on Node ${{ matrix.node }}
-    needs: build
+#       - name: Drop development dependencies
+#         run: npm prune --production
 
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: ['9', '10', '12', '14', '16']
+#       - uses: actions/upload-artifact@v2
+#         with:
+#           name: node-modules-${{ github.run_id }}
+#           path: node_modules
+#   test:
+#     name: Test functionality on Node ${{ matrix.node }}
+#     needs: build
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         node: ['9', '10', '12', '14', '16']
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node }}
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v2
 
-      - uses: actions/download-artifact@v2
-        with:
-          name: artifact-${{ github.run_id }}
-          path: dist
+#       - name: Use Node ${{ matrix.node }}
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: ${{ matrix.node }}
 
-      - uses: actions/download-artifact@v2
-        with:
-          name: node-modules-${{ github.run_id }}
-          path: node_modules      
-          
-      - name: Run client tests
-        run: npm run test:client
+#       - uses: actions/download-artifact@v2
+#         with:
+#           name: artifact-${{ github.run_id }}
+#           path: dist
+
+#       - uses: actions/download-artifact@v2
+#         with:
+#           name: node-modules-${{ github.run_id }}
+#           path: node_modules
+
+#       - name: Run client tests
+#         run: npm run test:client
 
 
-  publish:
-    name: Publish extra information about the build
-    if: startsWith(github.ref, 'refs/heads/master')
-    needs: test
-    runs-on: ubuntu-latest
+#   publish:
+#     name: Publish extra information about the build
+#     if: startsWith(github.ref, 'refs/heads/master')
+#     needs: test
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      
-      - name: Setup node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-      
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v2
 
-      - name: Publish Semantic Release
-        uses: cycjimmy/semantic-release-action@v2
-        id: semantic
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }} 
+#       - name: Setup node.js
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: '16'
 
-  release-candidate:
-    name: Publish a release candidate
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
-    runs-on: ubuntu-latest
+#       - name: Install deps and build (with cache)
+#         uses: bahmutov/npm-install@v1
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=VERSION::$(echo ${GITHUB_REF/refs\/tags\//} | sed 's/^v//')
+#       - name: Publish Semantic Release
+#         uses: cycjimmy/semantic-release-action@v2
+#         id: semantic
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Set the tag name to package.json
-        run: >-
-          node -e "
-            const fs = require('fs'); 
-            const packageJson = require('./package.json'); 
-            const version = '${{ steps.get_version.outputs.VERSION }}';
-            fs.writeFileSync('./package.json', JSON.stringify({ ...packageJson, version }));
-          "
+#   release-candidate:
+#     name: Publish a release candidate
+#     if: startsWith(github.ref, 'refs/tags/v')
+#     needs: test
+#     runs-on: ubuntu-latest
 
-      - name: Setup node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-          registry-url: 'https://registry.npmjs.org'
-      
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v2
 
-      - name: Release
-        run: npm publish --tag next
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+#       - name: Get the version
+#         id: get_version
+#         run: echo ::set-output name=VERSION::$(echo ${GITHUB_REF/refs\/tags\//} | sed 's/^v//')
+
+#       - name: Set the tag name to package.json
+#         run: >-
+#           node -e "
+#             const fs = require('fs');
+#             const packageJson = require('./package.json');
+#             const version = '${{ steps.get_version.outputs.VERSION }}';
+#             fs.writeFileSync('./package.json', JSON.stringify({ ...packageJson, version }));
+#           "
+
+#       - name: Setup node.js
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: '16'
+#           registry-url: 'https://registry.npmjs.org'
+
+#       - name: Install deps and build (with cache)
+#         uses: bahmutov/npm-install@v1
+
+#       - name: Release
+#         run: npm publish --tag next
+#         env:
+#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
