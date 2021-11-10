@@ -54,12 +54,6 @@ jobs:
           name: node-modules-${{ github.run_id }}
           path: node_modules
 
-      - uses: actions/cache@v2
-        id: cache-install
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-
   test:
     name: Test functionality on Node ${{ matrix.node }}
     needs: install
