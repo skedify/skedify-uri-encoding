@@ -35,6 +35,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit Test
+        run: npm run test -- --ci --coverage --maxWorkers=2
+
       - uses: actions/upload-artifact@v2
         with:
           name: artifact-${{ github.run_id }}
@@ -53,31 +59,6 @@ jobs:
         with:
           path: ./*
           key: ${{ github.sha }}
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/cache@v2
-        id: restore-install
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-      - run: npm run lint
-
-  testUnit:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/cache@v2
-        id: restore-install
-        with:
-          path: ./*
-          key: ${{ github.sha }}
-
-      - run: npm run test -- --ci --coverage --maxWorkers=2
 
   test:
     name: Test functionality on Node ${{ matrix.node }}
@@ -111,7 +92,7 @@ jobs:
   testsPass:
     name: Thank you, next
     runs-on: ubuntu-latest
-    needs: [lint,testUnit, test]
+    needs: [test]
     steps:
       - run: exit 0
 
@@ -120,13 +101,22 @@ jobs:
     # Enable regular release flow for develop & branches starting with "rc/"
     if: ${{ github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
-    needs: [testUnit,test]
+    needs: [testsPass]
     steps:
-      - uses: actions/cache@v2
-        id: restore-install
+      - name: Checkout Repo
+        uses: actions/checkout@v2
         with:
-          path: ./*
-          key: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Setup .npmrc
         run: |
