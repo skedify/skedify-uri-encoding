@@ -10,9 +10,6 @@
     "dist",
     "src"
   ],
-  "engines": {
-    "node": "16"
-  },
   "peerDependencies": {},
   "scripts": {
     "start": "tsdx watch",
